@@ -109,6 +109,12 @@ draw_cursor(int x, int y, int show) {
 }
 
 void
+draw_gird(int x, int y, int playerColor){
+	draw_box(x, y, BCH(x, y), colormsgok, 1);
+	return;
+}
+
+void
 draw_board() {
 	int i, j;
 	for(i = 0; i < BOARDSZ; i++) {
@@ -140,5 +146,87 @@ draw_score() {
 	printw(" : %d", black);
 	attroff(A_BOLD);
 	return;
+}
+void 
+findCol(int i, int j, int player)
+{
+	int left = -1;
+	int right = -1;
+	int k, l;
+	for(k = j-1; k >= 0; k--){
+		if(board[i][k] == 0){
+			left = 0;
+			break;
+		}
+		else if(board[i][k] == player){
+			left = 1;
+			break;
+		}
+	}
+	for(l = j+1; l < BOARDSZ; l++){
+		if(board[i][l] == 0){
+			right = 0;
+			break;
+		}
+		else if(board[i][l] == player){
+			right = 1;
+			break;
+		}
+	}
+	if(left == 0 && right == 1){
+		draw_gird(k, i, 1);
+	}
+	else if(left == 1 && right == 0){
+		draw_gird(l, i, 1);
+	}
+}
+void 
+findRow(int i, int j, int player)
+{
+	int up = -1;
+	int down = -1;
+	int k, l;
+	for(k = i-1; k >= 0; k--){
+		if(board[k][j] == 0){
+			up = 0;
+			break;
+		}
+		else if(board[k][j] == player){
+			up = 1;
+			break;
+		}
+	}
+	for(l = i+1; l < BOARDSZ; l++){
+		if(board[l][j] == 0){
+			down = 0;
+			break;
+		}
+		else if(board[l][j] == player){
+			down = 1;
+			break;
+		}
+	}
+	if(up == 0 && down == 1){
+		draw_gird(j, k, 1);
+	}
+	else if(up == 1 && down == 0){
+		draw_gird(j, l, 1);
+	}
+}
+void
+markGirdToPlacePiece(int player)
+{
+	int i, j;
+	int oppiste = (player == PLAYER1) ? PLAYER2 : PLAYER1;
+	for(i = 0; i < BOARDSZ; i++){
+		for(j = 0; j < BOARDSZ; j++){
+			if(board[i][j] == oppiste){
+				findCol(i, j, player);
+				findRow(i, j, player);
+				//move(height-1,0);
+				//printw("%d %d\n",i,j);
+			}
+		}
+	}
 }
 

@@ -18,7 +18,9 @@ void init_colors();
 
 void draw_message(const char *msg, int highlight);
 void draw_cursor(int x, int y, int hide);
+void draw_gird(int x, int y, int playerColor);
 void draw_board();
 void draw_score();
+void markGirdToPlacePiece(int player);
 
 #endif	/* __OTHELLO_H__ */

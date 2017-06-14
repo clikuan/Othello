@@ -1,7 +1,7 @@
 
-CC	= gcc
+CC	= gcc 
 CFLAGS	= -Wall -g -I/usr/include/ncurses
-LDFLAGS	= -lncurses -pthread
+LDFLAGS	= -lncurses -pthread 
 PROGS	= sample
 
 all: $(PROGS)
