@@ -22,5 +22,6 @@ void draw_gird(int x, int y, int playerColor);
 void draw_board();
 void draw_score();
 void markGirdToPlacePiece(int player);
+int placePiece(int r, int c, int player);
 
 #endif	/* __OTHELLO_H__ */

@@ -16,7 +16,7 @@ int start = 0;
 int currentTurn = PLAYER1;
 int isServer = -1;
 char changePos[10];
-int updateHeaderMsg = 1;
+int updateHeaderMsg = 0;
 void
 userPutPieceDone(int signo)
 {	
@@ -49,6 +49,7 @@ conn(void *address)
 			char *column = strtok(NULL, ":");
 			int r = atoi(row);
 			int c = atoi(column);
+			placePiece(r,c,PLAYER1);
 			board[r][c] = PLAYER1;
 			currentTurn = PLAYER2;
 		}
@@ -81,6 +82,7 @@ serve(void *port)
 		char *column = strtok(NULL, ":");
 		int r = atoi(row);
 		int c = atoi(column);
+		placePiece(r,c,PLAYER2);
 		board[r][c] = PLAYER2;
 		currentTurn = PLAYER1;
 	}
@@ -142,6 +144,9 @@ main(int argc, char *argv[])
     	fprintf(stderr, "must specify argument\n");
     	return -1;
     }
+    	//init_board();
+        //placePiece(2, 4, PLAYER1);
+        //return 1;
     // create a thread for communicate.
     pthread_t comThread;
     if(isServer)
@@ -189,6 +194,7 @@ redraw:
 		if(!myTurn()){
 			continue;
 		}
+		markGirdToPlacePiece(currentTurn);
 		if(!updateHeaderMsg){
 			updateHeaderMsg = 1;
 			goto redraw;
@@ -196,67 +202,75 @@ redraw:
 		int ch = getch();
 		int moved = 0;
 		switch(ch) {
-		case ' ':
-			board[cy][cx] = currentTurn;
-			sprintf(changePos,"%d:%d",cy,cx);
-			draw_cursor(cx, cy, 1);
-			draw_score();
-			refresh();
-			currentTurn = (currentTurn == PLAYER1) ? PLAYER2 : PLAYER1;
-			kill(getpid(),SIGUSR1);
-			updateHeaderMsg = 0;
-			goto redraw;
-			break;
-		case 0x0d:
-		case 0x0a:
-		case KEY_ENTER:
-			board[cy][cx] = currentTurn;
-			sprintf(changePos,"%d:%d",cy,cx);
-			draw_cursor(cx, cy, 1);
-			draw_score();
-			refresh();
-			currentTurn = (currentTurn == PLAYER1) ? PLAYER2 : PLAYER1;
-			kill(getpid(),SIGUSR1);
-			updateHeaderMsg = 0;
-			goto redraw;
-			break;
-		case 'q':
-		case 'Q':
-			goto quit;
-			break;
-		case 'r':
-		//case 'R':
-		//	goto restart;
-		//	break;
-		case 'k':
-		case KEY_UP:
-			markGirdToPlacePiece(currentTurn);
-			draw_cursor(cx, cy, 0);
-			cy = (cy-1+BOARDSZ) % BOARDSZ;
-			draw_cursor(cx, cy, 1);
-			moved++;
-			break;
-		case 'j':
-		case KEY_DOWN:
-			draw_cursor(cx, cy, 0);
-			cy = (cy+1) % BOARDSZ;
-			draw_cursor(cx, cy, 1);
-			moved++;
-			break;
-		case 'h':
-		case KEY_LEFT:
-			draw_cursor(cx, cy, 0);
-			cx = (cx-1+BOARDSZ) % BOARDSZ;
-			draw_cursor(cx, cy, 1);
-			moved++;
-			break;
-		case 'l':
-		case KEY_RIGHT:
-			draw_cursor(cx, cy, 0);
-			cx = (cx+1) % BOARDSZ;
-			draw_cursor(cx, cy, 1);
-			moved++;
-			break;
+			case ' ':
+				if(board[cy][cx] != 0 )
+					break;
+				if(placePiece(cy, cx, currentTurn) == 0)
+					break;
+				board[cy][cx] = currentTurn;
+				sprintf(changePos,"%d:%d",cy,cx);
+				draw_cursor(cy, cx, 1);
+				draw_score();
+				refresh();
+				currentTurn = (currentTurn == PLAYER1) ? PLAYER2 : PLAYER1;
+				kill(getpid(),SIGUSR1);
+				updateHeaderMsg = 0;
+				goto redraw;
+				break;
+			case 0x0d:
+			case 0x0a:
+			case KEY_ENTER:
+				//printw("%d %d\n",cx,cy);
+				if(board[cy][cx] != 0)
+					break;
+				if(placePiece(cy, cx, currentTurn) == 0)
+					break;
+				board[cy][cx] = currentTurn;
+				sprintf(changePos,"%d:%d",cy,cx);
+				draw_cursor(cy, cx, 1);
+				draw_score();
+				refresh();
+				currentTurn = (currentTurn == PLAYER1) ? PLAYER2 : PLAYER1;
+				kill(getpid(),SIGUSR1);
+				updateHeaderMsg = 0;
+				goto redraw;
+				break;
+			case 'q':
+			case 'Q':
+				goto quit;
+				break;
+			case 'r':
+			//case 'R':
+			//	goto restart;
+			//	break;
+			case 'k':
+			case KEY_UP:
+				draw_cursor(cx, cy, 0);
+				cy = (cy-1+BOARDSZ) % BOARDSZ;
+				draw_cursor(cx, cy, 1);
+				moved++;
+				break;
+			case 'j':
+			case KEY_DOWN:
+				draw_cursor(cx, cy, 0);
+				cy = (cy+1) % BOARDSZ;
+				draw_cursor(cx, cy, 1);
+				moved++;
+				break;
+			case 'h':
+			case KEY_LEFT:
+				draw_cursor(cx, cy, 0);
+				cx = (cx-1+BOARDSZ) % BOARDSZ;
+				draw_cursor(cx, cy, 1);
+				moved++;
+				break;
+			case 'l':
+			case KEY_RIGHT:
+				draw_cursor(cx, cy, 0);
+				cx = (cx+1) % BOARDSZ;
+				draw_cursor(cx, cy, 1);
+				moved++;
+				break;
 		}
 
 		if(moved) {
