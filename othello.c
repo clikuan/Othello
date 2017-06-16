@@ -36,6 +36,22 @@ static int colormsgok;
 void
 init_board() {
 	bzero(board, sizeof(board));
+	//int i,j;
+	/*for(i = 0; i < BOARDSZ-1; i++)
+		for(j = 0; j < BOARDSZ; j++)
+			if(j&1)
+				board[i][j] = PLAYER1;
+			else
+				board[i][j] = PLAYER2;
+			//board[BOARDSZ-1][BOARDSZ-3]=PLAYER2;
+			//board[BOARDSZ-1][BOARDSZ-1]=0;
+			board[BOARDSZ-1][0] = board[BOARDSZ-1][1] = board[BOARDSZ-1][2] = board[BOARDSZ-1][3] = board[BOARDSZ-1][4] = PLAYER2;
+			board[BOARDSZ-1][7] = PLAYER1;
+			board[BOARDSZ-2][5] = PLAYER1;
+			board[BOARDSZ-3][4] = PLAYER1;
+			board[BOARDSZ-4][3] = PLAYER1;
+			board[BOARDSZ-2][6] = PLAYER1;
+			board[BOARDSZ-2][4] = PLAYER1;*/
 	board[3][3] = board[4][4] = PLAYER1;
 	board[3][4] = board[4][3] = PLAYER2;
 }
@@ -140,17 +156,21 @@ draw_board() {
 	}
 	return;
 }
-
-void
-draw_score() {
+int 
+getPlayerScore(int player)
+{
+	int score = 0;
 	int i, j;
-	int black = 0, white = 0;
 	for(i = 0; i < BOARDSZ; i++) {
 		for(j = 0; j < BOARDSZ; j++) {
-			if(board[i][j] == PLAYER1) white++;
-			if(board[i][j] == PLAYER2) black++;
+			if(board[i][j] == player) score++;
 		}
 	}
+	return score;
+}
+void
+draw_score() {
+	int white = getPlayerScore(PLAYER1), black = getPlayerScore(PLAYER2);
 	attron(A_BOLD);
 	move(box_top+3, box_left + 4*BOARDSZ + 10);
 	printw("Player #1 ");
@@ -163,8 +183,8 @@ draw_score() {
 	attroff(A_BOLD);
 	return;
 }
-void 
-drawCol(int i, int j, int player)
+int 
+drawCol(int i, int j, int player, int flag)
 {
 	int left = -1;
 	int right = -1;
@@ -190,14 +210,19 @@ drawCol(int i, int j, int player)
 		}
 	}
 	if(left == 0 && right == 1){
-		draw_gird(k, i, 1);
+		if(flag)
+			draw_gird(k, i, 1);
+		return 1;
 	}
 	else if(left == 1 && right == 0){
-		draw_gird(l, i, 1);
+		if(flag)
+			draw_gird(l, i, 1);
+		return 1;
 	}
+	return 0;
 }
-void 
-drawRow(int i, int j, int player)
+int 
+drawRow(int i, int j, int player, int flag)
 {
 	int up = -1;
 	int down = -1;
@@ -223,14 +248,19 @@ drawRow(int i, int j, int player)
 		}
 	}
 	if(up == 0 && down == 1){
-		draw_gird(j, k, 1);
+		if(flag)
+			draw_gird(j, k, 1);
+		return 1;
 	}
 	else if(up == 1 && down == 0){
-		draw_gird(j, l, 1);
+		if(flag)
+			draw_gird(j, l, 1);
+		return 1;
 	}
+	return 0;
 }
-void 
-drawDiagonalLeftTop2RightBottom(i, j, player)
+int 
+drawDiagonalLeftTop2RightBottom(int i, int j, int player, int flag)
 {
 	int left = -1;
 	int right = -1;
@@ -256,14 +286,19 @@ drawDiagonalLeftTop2RightBottom(i, j, player)
 		}
 	}
 	if(left == 0 && right == 1){
-		draw_gird(k2, k1, 1);
+		if(flag)
+			draw_gird(k2, k1, 1);
+		return 1;
 	}
 	else if(left == 1 && right == 0){
-		draw_gird(l2, l1, 1);
+		if(flag)
+			draw_gird(l2, l1, 1);
+		return 1;
 	}
+	return 0;
 }
-void 
-drawDiagonalRightTop2LeftBottom(i, j, player)
+int 
+drawDiagonalRightTop2LeftBottom(int i, int j, int player, int flag)
 {
 	int left = -1;
 	int right = -1;
@@ -289,11 +324,16 @@ drawDiagonalRightTop2LeftBottom(i, j, player)
 		}
 	}
 	if(left == 0 && right == 1){
-		draw_gird(k2, k1, 1);
+		if(flag)
+			draw_gird(k2, k1, 1);
+		return 1;
 	}
 	else if(left == 1 && right == 0){
-		draw_gird(l2, l1, 1);
+		if(flag)
+			draw_gird(l2, l1, 1);
+		return 1;
 	}
+	return 0;
 }	
 
 void
@@ -642,6 +682,52 @@ placePiece(int r, int c, int player)
 	}
 	return 1;
 }
+int 
+checkPlayerEnd(int player)
+{
+	int oppiste = (player == PLAYER1) ? PLAYER2 : PLAYER1;
+	int i, j, end = 1;
+	for(i = 0; i < BOARDSZ; i++){
+		for(j = 0; j < BOARDSZ; j++){
+			if(board[i][j] == oppiste){
+				if(drawCol(i, j, player, 0) 
+					|| drawRow(i, j, player, 0)
+					|| drawDiagonalLeftTop2RightBottom(i, j, player, 0)
+					|| drawDiagonalRightTop2LeftBottom(i, j, player, 0)){
+					end = 0;
+					break;
+				}	
+			}
+		}
+	}
+	return end;
+}
+void printGameResult(int player)
+{
+	int player1Score = getPlayerScore(PLAYER1);
+	int player2Score = getPlayerScore(PLAYER2);
+	int height, width;
+	getmaxyx(stdscr, height, width);
+	move(height-2, 0);
+	attron(A_BOLD);
+	if((player1Score > player2Score)){
+		if(player == PLAYER1)
+			printw("You Win!!\n");
+		else
+			printw("You Lose!!\n");
+	}
+	else if((player1Score < player2Score)){
+		if(player == PLAYER2)
+			printw("You Win!!\n");
+		else
+			printw("You Lose!!\n");
+	}
+	else{
+		printw("Tie!!\n");
+	}
+	printw("%d %d\n",player1Score,player2Score);
+	attroff(A_BOLD);
+}
 void
 markGirdToPlacePiece(int player)
 {
@@ -650,10 +736,10 @@ markGirdToPlacePiece(int player)
 	for(i = 0; i < BOARDSZ; i++){
 		for(j = 0; j < BOARDSZ; j++){
 			if(board[i][j] == oppiste){
-				drawCol(i, j, player);
-				drawRow(i, j, player);
-				drawDiagonalLeftTop2RightBottom(i, j, player);
-				drawDiagonalRightTop2LeftBottom(i, j, player);
+				drawCol(i, j, player, 1);
+				drawRow(i, j, player, 1);
+				drawDiagonalLeftTop2RightBottom(i, j, player, 1);
+				drawDiagonalRightTop2LeftBottom(i, j, player, 1);
 			}
 		}
 	}

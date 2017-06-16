@@ -15,12 +15,12 @@ int sockfd;
 int start = 0;
 int currentTurn = PLAYER1;
 int isServer = -1;
-char changePos[10];
+char sendData[25];
 int updateHeaderMsg = 0;
 void
 userPutPieceDone(int signo)
 {	
-	send(sockfd,changePos, sizeof(changePos),0);
+	send(sockfd,sendData, sizeof(sendData),0);
 }
 void* 
 conn(void *address)
@@ -43,6 +43,9 @@ conn(void *address)
 		recv(sockfd, buffer, sizeof(buffer),0);
 		if(strcmp(buffer,"start") == 0){
 			start = 1;
+		}
+		else if(strcmp(buffer, "opponentSkip") == 0){
+			currentTurn = PLAYER2;
 		}
 		else{
 			char *row = strtok(buffer, ":");
@@ -78,6 +81,10 @@ serve(void *port)
 	send(sockfd, buffer, sizeof(buffer), 0);
 	while(1){
 		recv(sockfd, buffer, sizeof(buffer),0);
+		if(strcmp(buffer, "opponentSkip") == 0){
+			currentTurn = PLAYER1;
+			continue;
+		}
 		char *row = strtok(buffer, ":");
 		char *column = strtok(NULL, ":");
 		int r = atoi(row);
@@ -194,6 +201,26 @@ redraw:
 		if(!myTurn()){
 			continue;
 		}
+		if(checkPlayerEnd(PLAYER1) && checkPlayerEnd(PLAYER2)){ //game over
+			draw_board();
+			draw_cursor(cx, cy, 1);
+			draw_score();
+			printGameResult(currentTurn);
+			refresh();
+			currentTurn = (currentTurn == PLAYER1) ? PLAYER2 : PLAYER1;
+			continue;
+		}
+		else if((checkPlayerEnd(PLAYER1) && (currentTurn == PLAYER1) && (isServer)) || 
+				(checkPlayerEnd(PLAYER2) && (currentTurn == PLAYER2) && (!isServer))){
+			draw_board();
+			draw_cursor(cx, cy, 1);
+			draw_score();
+			strcpy(sendData,"opponentSkip");
+			refresh();
+			kill(getpid(),SIGUSR1);
+			currentTurn = (currentTurn == PLAYER1) ? PLAYER2 : PLAYER1;
+			continue;
+		}
 		markGirdToPlacePiece(currentTurn);
 		if(!updateHeaderMsg){
 			updateHeaderMsg = 1;
@@ -208,7 +235,7 @@ redraw:
 				if(placePiece(cy, cx, currentTurn) == 0)
 					break;
 				board[cy][cx] = currentTurn;
-				sprintf(changePos,"%d:%d",cy,cx);
+				sprintf(sendData,"%d:%d",cy,cx);
 				draw_cursor(cy, cx, 1);
 				draw_score();
 				refresh();
@@ -226,13 +253,18 @@ redraw:
 				if(placePiece(cy, cx, currentTurn) == 0)
 					break;
 				board[cy][cx] = currentTurn;
-				sprintf(changePos,"%d:%d",cy,cx);
+				sprintf(sendData,"%d:%d",cy,cx);
 				draw_cursor(cy, cx, 1);
 				draw_score();
 				refresh();
-				currentTurn = (currentTurn == PLAYER1) ? PLAYER2 : PLAYER1;
 				kill(getpid(),SIGUSR1);
 				updateHeaderMsg = 0;
+				if(checkPlayerEnd(PLAYER1) && checkPlayerEnd(PLAYER2)){ //game over
+					printGameResult(currentTurn);
+					refresh();
+					continue;
+				}
+				currentTurn = (currentTurn == PLAYER1) ? PLAYER2 : PLAYER1;
 				goto redraw;
 				break;
 			case 'q':
