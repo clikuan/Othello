@@ -2,11 +2,11 @@
 CC	= gcc 
 CFLAGS	= -Wall -g -I/usr/include/ncurses
 LDFLAGS	= -lncurses -pthread 
-PROGS	= sample
+PROGS	= game
 
 all: $(PROGS)
 
-sample: sample.o othello.o
+game: game.o othello.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
